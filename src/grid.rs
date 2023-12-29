@@ -1,10 +1,12 @@
 use bevy::prelude::*;
-use bevy::reflect::Enum;
 use bevy::sprite::MaterialMesh2dBundle;
 
 pub const GRID_CELL_SIZE: Vec2 = Vec2::new(8.0, 8.0);
 pub const GRID_WIDTH: i32 = 150;
 pub const GRID_HEIGHT: i32 = 80;
+
+#[derive(Component, Debug)]
+pub struct Grid;
 
 #[derive(Component, Debug)]
 pub struct GridValues {
@@ -18,18 +20,18 @@ impl GridValues {
 }
 
 #[derive(Component, Debug)]
-pub struct SimGrid;
+pub struct SimCell;
 
 pub struct GridPlugin;
 
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_grid);
-        app.add_systems(Update, update_grid);
+        app.add_systems(Startup, (spawn_cells, spawn_grid));
+        app.add_systems(Update, update_cells);
     }
 }
 
-fn spawn_grid(
+fn spawn_cells(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -50,25 +52,40 @@ fn spawn_grid(
                         255.0,
                         255.0,
                         255.0,
-                        (i + j) as f32 / 230.0,
+                        (i + j) as f32 / 250.0,
                     ))),
                     ..default()
                 },
-                GridValues::new(vec![]),
-                SimGrid,
+                SimCell,
             ));
         }
     }
 }
 
-fn update_grid(
-    query: Query<&mut Handle<ColorMaterial>, With<SimGrid>>,
+fn update_cells(
+    query_simcells: Query<&mut Handle<ColorMaterial>, With<SimCell>>,
+    query_gridvalues: Query<&GridValues, With<Grid>>,
     mut color_material: ResMut<Assets<ColorMaterial>>,
 ) {
-    for query_color_material in &query {
+    let grid_vec = query_gridvalues
+        .get_single()
+        .expect("Could not get grid values vector in update_cells in grid.rs");
+
+    let mut counter: usize = 0;
+
+    for query_color_material in &query_simcells {
         if let Some(material) = color_material.get_mut(query_color_material) {
-            material.color = Color::RED;
-            break;
+            material.color = Color::rgba(
+                grid_vec.grid_values_vec[counter],
+                grid_vec.grid_values_vec[counter + 1],
+                grid_vec.grid_values_vec[counter + 2],
+                grid_vec.grid_values_vec[counter + 3],
+            );
+            counter += 4;
         }
     }
+}
+
+fn spawn_grid(mut commands: Commands) {
+    commands.spawn((GridValues::new(Vec::new()), Grid));
 }

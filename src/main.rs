@@ -13,7 +13,7 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
         .add_plugins(DefaultPlugins)
         .add_plugins(CameraPlugin)
-        //.add_plugins(SimulatePlugin)
+        .add_plugins(SimulatePlugin)
         .add_plugins(GridPlugin)
         .run();
 }
