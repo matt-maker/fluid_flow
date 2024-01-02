@@ -107,6 +107,27 @@ impl GridnewM {
     }
 }
 
+#[derive(Component, Debug)]
+pub struct Gravity {
+    pub gravity: f32,
+}
+
+impl Gravity {
+    pub fn new(gravity: f32) -> Self {
+        Self { gravity }
+    }
+}
+
+#[derive(Component, Debug)]
+pub struct Dt {
+    pub dt: f32,
+}
+
+impl Dt {
+    pub fn new(dt: f32) -> Self {
+        Self { dt }
+    }
+}
 #[derive(Bundle)]
 pub struct GridBundle {
     pub grid_values: GridValues,
@@ -118,6 +139,8 @@ pub struct GridBundle {
     pub grid_s: GridS,
     pub grid_m: GridM,
     pub grid_newm: GridnewM,
+    pub gravity: Gravity,
+    pub dt: Dt,
 }
 
 #[derive(Component, Debug)]
@@ -188,7 +211,7 @@ fn update_cells(
 fn spawn_grid(mut commands: Commands) {
     commands.spawn((
         GridBundle {
-            grid_values: GridValues::new(Vec::new()),
+            grid_values: GridValues::new(Vec::new()), // keep for now
             grid_m: GridM::new(Vec::new()),
             grid_newm: GridnewM::new(Vec::new()),
             grid_newu: GridnewU::new(Vec::new()),
@@ -197,6 +220,8 @@ fn spawn_grid(mut commands: Commands) {
             grid_s: GridS::new(Vec::new()),
             grid_u: GridU::new(Vec::new()),
             grid_v: GridV::new(Vec::new()),
+            gravity: Gravity::new(9.81),
+            dt: Dt::new(1.0 / 60.0),
         },
         Grid,
     ));
