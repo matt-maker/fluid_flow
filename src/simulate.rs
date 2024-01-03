@@ -1,4 +1,4 @@
-use crate::grid::{Dt, Gravity, Grid, GridS, GridV, GridValues, GRID_HEIGHT, GRID_WIDTH};
+use crate::grid::{Dt, Gravity, Grid, GridS, GridV, GridValues, NumIters, GRID_HEIGHT, GRID_WIDTH};
 use bevy::prelude::*;
 
 pub struct SimulatePlugin;
@@ -6,6 +6,7 @@ pub struct SimulatePlugin;
 impl Plugin for SimulatePlugin {
     fn build(&self, app: &mut App) {
         //app.add_systems(Update, integrate);
+        //app.add_systems(Update, solve_incompressibility);
         app.add_systems(Update, pop_sim_vec);
         app.add_systems(PostUpdate, clean_up);
     }
@@ -24,10 +25,10 @@ fn pop_sim_vec(mut query: Query<&mut GridValues, With<Grid>>) {
     }
 }
 
-fn clean_up(mut query: Query<(&mut GridValues, &mut GridV), With<Grid>>) {
-    if let Ok((mut gridvalues, mut gridv)) = query.get_single_mut() {
-        gridvalues.grid_values_vec.clear();
-        gridv.grid_v_vec.clear();
+fn clean_up(mut query: Query<&mut GridValues, With<Grid>>) {
+    if let Ok(mut grid_vec) = query.get_single_mut() {
+        grid_vec.grid_values_vec.clear();
+        //gridv.grid_v_vec.clear();
     }
 }
 
@@ -49,5 +50,11 @@ fn integrate(
                 }
             }
         }
+    }
+}
+
+fn solve_incompressibility(query: Query<(&NumIters, &Dt), With<Grid>>) {
+    if let Ok((number_iters, time)) = query.get_single() {
+        println!("{} and {}", number_iters.num_iters, time.dt);
     }
 }

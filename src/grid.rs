@@ -128,6 +128,18 @@ impl Dt {
         Self { dt }
     }
 }
+
+#[derive(Component, Debug)]
+pub struct NumIters {
+    pub num_iters: usize,
+}
+
+impl NumIters {
+    pub fn new(num_iters: usize) -> Self {
+        Self { num_iters }
+    }
+}
+
 #[derive(Bundle)]
 pub struct GridBundle {
     pub grid_values: GridValues,
@@ -141,6 +153,7 @@ pub struct GridBundle {
     pub grid_newm: GridnewM,
     pub gravity: Gravity,
     pub dt: Dt,
+    pub num_iters: NumIters,
 }
 
 #[derive(Component, Debug)]
@@ -222,6 +235,7 @@ fn spawn_grid(mut commands: Commands) {
             grid_v: GridV::new(Vec::new()),
             gravity: Gravity::new(9.81),
             dt: Dt::new(1.0 / 60.0),
+            num_iters: NumIters::new(40),
         },
         Grid,
     ));
