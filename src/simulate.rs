@@ -11,6 +11,7 @@ impl Plugin for SimulatePlugin {
             Update,
             solve_incompressibility.in_set(SimulationSet::SolveIncompressibility),
         );
+        app.add_systems(Update, extrapolate.in_set(SimulationSet::Extrapolate));
         app.add_systems(
             Update,
             update_simulation_vector_values.in_set(SimulationSet::PopSimVec),

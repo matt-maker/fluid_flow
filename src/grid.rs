@@ -160,7 +160,16 @@ pub struct GridPlugin;
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (spawn_cells, spawn_grid));
-        app.add_systems(PostStartup, (pop_grid_s, pop_grid_v, pop_grid_values));
+        app.add_systems(
+            PostStartup,
+            (
+                pop_grid_s,
+                pop_grid_v,
+                pop_grid_u,
+                pop_grid_p,
+                pop_grid_values,
+            ),
+        );
         app.add_systems(Update, update_cells.in_set(SimulationSet::GridUpdate));
     }
 }
@@ -237,6 +246,26 @@ fn pop_grid_v(mut query: Query<&mut GridV, With<Grid>>) {
         for _ in 0..GRID_WIDTH {
             for _ in 0..GRID_HEIGHT {
                 grid_v.grid_v_vec.push(0.0);
+            }
+        }
+    }
+}
+
+fn pop_grid_u(mut query: Query<&mut GridU, With<Grid>>) {
+    if let Ok(mut grid_u) = query.get_single_mut() {
+        for _ in 0..GRID_WIDTH {
+            for _ in 0..GRID_HEIGHT {
+                grid_u.grid_u_vec.push(0.0);
+            }
+        }
+    }
+}
+
+fn pop_grid_p(mut query: Query<&mut GridP, With<Grid>>) {
+    if let Ok(mut grid_p) = query.get_single_mut() {
+        for _ in 0..GRID_WIDTH {
+            for _ in 0..GRID_HEIGHT {
+                grid_p.grid_p_vec.push(0.0);
             }
         }
     }
