@@ -1,3 +1,4 @@
+use crate::schedule::SimulationSet;
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 
@@ -108,35 +109,32 @@ impl GridnewM {
 }
 
 #[derive(Component, Debug)]
-pub struct Gravity {
+pub struct Scene {
     pub gravity: f32,
-}
-
-impl Gravity {
-    pub fn new(gravity: f32) -> Self {
-        Self { gravity }
-    }
-}
-
-#[derive(Component, Debug)]
-pub struct Dt {
     pub dt: f32,
-}
-
-impl Dt {
-    pub fn new(dt: f32) -> Self {
-        Self { dt }
-    }
-}
-
-#[derive(Component, Debug)]
-pub struct NumIters {
     pub num_iters: usize,
+    pub density: f32,
+    pub h: f32,
+    pub over_relaxation: f32,
 }
 
-impl NumIters {
-    pub fn new(num_iters: usize) -> Self {
-        Self { num_iters }
+impl Scene {
+    pub fn new(
+        gravity: f32,
+        dt: f32,
+        num_iters: usize,
+        density: f32,
+        h: f32,
+        over_relaxation: f32,
+    ) -> Self {
+        Self {
+            gravity,
+            dt,
+            num_iters,
+            density,
+            h,
+            over_relaxation,
+        }
     }
 }
 
@@ -151,9 +149,7 @@ pub struct GridBundle {
     pub grid_s: GridS,
     pub grid_m: GridM,
     pub grid_newm: GridnewM,
-    pub gravity: Gravity,
-    pub dt: Dt,
-    pub num_iters: NumIters,
+    pub scene: Scene,
 }
 
 #[derive(Component, Debug)]
@@ -164,7 +160,8 @@ pub struct GridPlugin;
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (spawn_cells, spawn_grid));
-        app.add_systems(Update, update_cells);
+        app.add_systems(PostStartup, (pop_grid_s, pop_grid_v, pop_grid_values));
+        app.add_systems(Update, update_cells.in_set(SimulationSet::GridUpdate));
     }
 }
 
@@ -173,23 +170,23 @@ fn spawn_cells(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    for i in 0..GRID_WIDTH {
-        for j in 0..GRID_HEIGHT {
+    for x in 0..GRID_WIDTH {
+        for y in 0..GRID_HEIGHT {
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes
                         .add(Mesh::from(shape::Quad::new(GRID_CELL_SIZE)))
                         .into(),
                     transform: Transform::from_xyz(
-                        (i - GRID_WIDTH / 2) as f32 * GRID_CELL_SIZE[0],
-                        (j - GRID_HEIGHT / 2) as f32 * GRID_CELL_SIZE[1],
+                        (x - GRID_WIDTH / 2) as f32 * GRID_CELL_SIZE[0],
+                        (y - GRID_HEIGHT / 2) as f32 * GRID_CELL_SIZE[1],
                         0.0,
                     ),
                     material: materials.add(ColorMaterial::from(Color::rgba(
                         255.0,
                         255.0,
                         255.0,
-                        (i + j) as f32 / 250.0,
+                        (x + y) as f32 / 250.0,
                     ))),
                     ..default()
                 },
@@ -221,6 +218,42 @@ fn update_cells(
     }
 }
 
+fn pop_grid_s(mut query: Query<&mut GridS, With<Grid>>) {
+    if let Ok(mut grid_s) = query.get_single_mut() {
+        for x in 0..GRID_WIDTH {
+            for y in 0..GRID_HEIGHT {
+                if x == 0 || y == 0 || y == GRID_HEIGHT - 1 {
+                    grid_s.grid_s_vec.push(0.0); // solid
+                } else {
+                    grid_s.grid_s_vec.push(1.0); // liquid
+                }
+            }
+        }
+    }
+}
+
+fn pop_grid_v(mut query: Query<&mut GridV, With<Grid>>) {
+    if let Ok(mut grid_v) = query.get_single_mut() {
+        for _ in 0..GRID_WIDTH {
+            for _ in 0..GRID_HEIGHT {
+                grid_v.grid_v_vec.push(0.0);
+            }
+        }
+    }
+}
+
+fn pop_grid_values(mut query: Query<&mut GridValues, With<Grid>>) {
+    if let Ok(mut grid_v) = query.get_single_mut() {
+        for _ in 0..GRID_WIDTH {
+            for _ in 0..GRID_HEIGHT {
+                for _ in 0..4 {
+                    grid_v.grid_values_vec.push(100.0);
+                }
+            }
+        }
+    }
+}
+
 fn spawn_grid(mut commands: Commands) {
     commands.spawn((
         GridBundle {
@@ -233,9 +266,14 @@ fn spawn_grid(mut commands: Commands) {
             grid_s: GridS::new(Vec::new()),
             grid_u: GridU::new(Vec::new()),
             grid_v: GridV::new(Vec::new()),
-            gravity: Gravity::new(9.81),
-            dt: Dt::new(1.0 / 60.0),
-            num_iters: NumIters::new(40),
+            scene: Scene::new(
+                9.81,       //gravity
+                1.0 / 60.0, //dt
+                40,         //num_iters
+                1000.0,     //density
+                0.01,       //h
+                1.9,        //over_relaxation
+            ),
         },
         Grid,
     ));

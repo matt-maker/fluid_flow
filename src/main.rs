@@ -2,10 +2,12 @@ use bevy::prelude::*;
 
 mod camera_2d;
 mod grid;
+mod schedule;
 mod simulate;
 
 use camera_2d::CameraPlugin;
 use grid::GridPlugin;
+use schedule::SchudulePlugin;
 use simulate::SimulatePlugin;
 
 fn main() {
@@ -15,5 +17,6 @@ fn main() {
         .add_plugins(CameraPlugin)
         .add_plugins(SimulatePlugin)
         .add_plugins(GridPlugin)
+        .add_plugins(SchudulePlugin)
         .run();
 }
