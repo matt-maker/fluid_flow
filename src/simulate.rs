@@ -1,4 +1,7 @@
-use crate::grid::{Grid, GridP, GridS, GridU, GridV, GridValues, Scene, GRID_HEIGHT, GRID_WIDTH};
+use crate::grid::{
+    Grid, GridP, GridS, GridU, GridV, GridValues, GridnewU, GridnewV, Scene, GRID_HEIGHT,
+    GRID_WIDTH,
+};
 use crate::schedule::SimulationSet;
 use bevy::prelude::*;
 
@@ -12,6 +15,7 @@ impl Plugin for SimulatePlugin {
             solve_incompressibility.in_set(SimulationSet::SolveIncompressibility),
         );
         app.add_systems(Update, extrapolate.in_set(SimulationSet::Extrapolate));
+        app.add_systems(Update, advect_vel.in_set(SimulationSet::Extrapolate));
         app.add_systems(
             Update,
             update_simulation_vector_values.in_set(SimulationSet::PopSimVec),
@@ -114,6 +118,44 @@ fn extrapolate(mut query_grid: Query<(&mut GridU, &mut GridV), With<Grid>>) {
 
             grid_v.grid_v_vec[(((GRID_WIDTH - 1) * GRID_HEIGHT) + y) as usize] =
                 grid_v.grid_v_vec[(((GRID_WIDTH - 2) * GRID_HEIGHT) + y) as usize];
+        }
+    }
+}
+
+fn advect_vel(
+    query_scene: Query<&Scene, With<Grid>>,
+    mut query_grid: Query<(&mut GridnewU, &GridU, &mut GridnewV, &GridV, &GridS), With<Grid>>,
+) {
+    if let Ok(scene) = query_scene.get_single() {
+        if let Ok((mut grid_new_u, grid_u, mut grid_new_v, grid_v, grid_s)) =
+            query_grid.get_single_mut()
+        {
+            grid_new_u.grid_newu_vec.clone_from(&grid_u.grid_u_vec);
+            grid_new_v.grid_newv_vec.clone_from(&grid_v.grid_v_vec);
+
+            for x in 1..GRID_WIDTH {
+                for y in 1..GRID_HEIGHT {
+                    let cnt: i32 = 1;
+
+                    // u
+                    if grid_s.grid_s_vec[(x * GRID_HEIGHT + y) as usize] != 0.0
+                        && grid_s.grid_s_vec[((x - 1) * GRID_HEIGHT + y) as usize] != 0.0
+                        && y < GRID_HEIGHT - 1
+                    {
+                        let var_x = x as f32 * scene.h;
+                        let var_y = y as f32 * scene.h + (scene.h * 0.5);
+                        let var_u = grid_u.grid_u_vec[(x * GRID_HEIGHT + y) as usize];
+                        let var_v = (grid_v.grid_v_vec[((x - 1) * GRID_HEIGHT + y) as usize]
+                            + grid_v.grid_v_vec[((x * GRID_HEIGHT) + y) as usize]
+                            + grid_v.grid_v_vec[((x - 1) * GRID_HEIGHT + y + 1) as usize]
+                            + grid_v.grid_v_vec[((x * GRID_HEIGHT) + y + 1) as usize])
+                            * 0.25;
+                        var_x = var_x - scene.dt * var_u;
+                        var_y = var_y - scene.dt * var_v;
+                        var_u = 
+                    }
+                }
+            }
         }
     }
 }
