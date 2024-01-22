@@ -142,17 +142,24 @@ fn advect_vel(
                         && grid_s.grid_s_vec[((x - 1) * GRID_HEIGHT + y) as usize] != 0.0
                         && y < GRID_HEIGHT - 1
                     {
-                        let var_x = x as f32 * scene.h;
-                        let var_y = y as f32 * scene.h + (scene.h * 0.5);
-                        let var_u = grid_u.grid_u_vec[(x * GRID_HEIGHT + y) as usize];
-                        let var_v = (grid_v.grid_v_vec[((x - 1) * GRID_HEIGHT + y) as usize]
+                        let mut var_x = x as f32 * scene.h;
+                        let mut var_y = y as f32 * scene.h + (scene.h * 0.5);
+                        let mut var_u = grid_u.grid_u_vec[(x * GRID_HEIGHT + y) as usize];
+                        let mut var_v = (grid_v.grid_v_vec[((x - 1) * GRID_HEIGHT + y) as usize]
                             + grid_v.grid_v_vec[((x * GRID_HEIGHT) + y) as usize]
                             + grid_v.grid_v_vec[((x - 1) * GRID_HEIGHT + y + 1) as usize]
                             + grid_v.grid_v_vec[((x * GRID_HEIGHT) + y + 1) as usize])
                             * 0.25;
                         var_x = var_x - scene.dt * var_u;
                         var_y = var_y - scene.dt * var_v;
-                        var_u = 
+
+                        //U_FIELD samplefield function (sf variables)
+                        let sf_x = scene.h.max(var_x.min(GRID_WIDTH as f32 * scene.h));
+                        let sf_y = scene.h.max(var_y.min(GRID_HEIGHT as f32 * scene.h));
+                        let mut sf_f: Vec<f32> = Vec::new();
+                        sf_f.clone_from(&grid_u.grid_u_vec);
+                        let sf_dy = scene.h * 0.5;
+                        //let x0 = 
                     }
                 }
             }
