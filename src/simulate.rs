@@ -159,7 +159,22 @@ fn advect_vel(
                         let mut sf_f: Vec<f32> = Vec::new();
                         sf_f.clone_from(&grid_u.grid_u_vec);
                         let sf_dy = scene.h * 0.5;
-                        //let x0 = 
+                        let x0 = ((GRID_WIDTH - 1) as f32).min(f32::floor(sf_x * (1.0 / scene.h)));
+                        let tx = (sf_x - (x0 * scene.h)) * 1.0 / scene.h;
+                        let x1 = ((GRID_WIDTH - 1) as f32).min(x0 + 1.0);
+                        let y0 = ((GRID_HEIGHT - 1) as f32)
+                            .min(f32::floor((sf_y - sf_dy) * (1.0 / scene.h)));
+                        let ty = ((sf_y - sf_dy) - (y0 * scene.h)) * 1.0 / scene.h;
+                        let y1 = ((GRID_HEIGHT - 1) as f32).min(y0 - 1.0);
+                        let sx = 1.0 - tx;
+                        let sy = 1.0 - ty;
+                        let val = sx * sy * sf_f[(x0 * (GRID_HEIGHT as f32) + y0) as usize]
+                            + tx * sy * sf_f[(x1 * (GRID_HEIGHT as f32) + y0) as usize]
+                            + tx * ty * sf_f[(x1 * (GRID_HEIGHT as f32) + y1) as usize]
+                            + sx * ty * sf_f[(x0 * (GRID_HEIGHT as f32) + y1) as usize];
+                        grid_new_u.grid_newu_vec[(x * GRID_HEIGHT + y) as usize] = val;
+
+                        //v
                     }
                 }
             }
