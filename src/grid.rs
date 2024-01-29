@@ -167,6 +167,7 @@ impl Plugin for GridPlugin {
                 pop_grid_v,
                 pop_grid_u,
                 pop_grid_p,
+                pop_grid_m,
                 pop_grid_values,
             ),
         );
@@ -266,6 +267,16 @@ fn pop_grid_p(mut query: Query<&mut GridP, With<Grid>>) {
         for _ in 0..GRID_WIDTH {
             for _ in 0..GRID_HEIGHT {
                 grid_p.grid_p_vec.push(0.0);
+            }
+        }
+    }
+}
+
+fn pop_grid_m(mut query: Query<&mut GridM, With<Grid>>) {
+    if let Ok(mut grid_m) = query.get_single_mut() {
+        for _ in 0..GRID_WIDTH {
+            for _ in 0..GRID_HEIGHT {
+                grid_m.grid_m_vec.push(0.0);
             }
         }
     }

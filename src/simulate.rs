@@ -15,7 +15,8 @@ impl Plugin for SimulatePlugin {
             solve_incompressibility.in_set(SimulationSet::SolveIncompressibility),
         );
         app.add_systems(Update, extrapolate.in_set(SimulationSet::Extrapolate));
-        app.add_systems(Update, advect_vel.in_set(SimulationSet::Extrapolate));
+        app.add_systems(Update, advect_vel.in_set(SimulationSet::AdvectVel));
+        app.add_systems(Update, advect_smoke.in_set(SimulationSet::AdvectSmoke));
         app.add_systems(
             Update,
             update_simulation_vector_values.in_set(SimulationSet::PopSimVec),
@@ -124,10 +125,13 @@ fn extrapolate(mut query_grid: Query<(&mut GridU, &mut GridV), With<Grid>>) {
 
 fn advect_vel(
     query_scene: Query<&Scene, With<Grid>>,
-    mut query_grid: Query<(&mut GridnewU, &GridU, &mut GridnewV, &GridV, &GridS), With<Grid>>,
+    mut query_grid: Query<
+        (&mut GridnewU, &mut GridU, &mut GridnewV, &mut GridV, &GridS),
+        With<Grid>,
+    >,
 ) {
     if let Ok(scene) = query_scene.get_single() {
-        if let Ok((mut grid_new_u, grid_u, mut grid_new_v, grid_v, grid_s)) =
+        if let Ok((mut grid_new_u, mut grid_u, mut grid_new_v, mut grid_v, grid_s)) =
             query_grid.get_single_mut()
         {
             grid_new_u.grid_newu_vec.clone_from(&grid_u.grid_u_vec);
@@ -203,7 +207,7 @@ fn advect_vel(
                         let x1 = ((GRID_WIDTH - 1) as f32).min(x0 + 1.0);
                         let y0 = ((GRID_HEIGHT - 1) as f32).min(f32::floor(sf_y * (1.0 / scene.h)));
                         let ty = (sf_y - (y0 * scene.h)) * (1.0 / scene.h);
-                        let y1 = ((GRID_HEIGHT - 1) as f32).min(y0 + 1.0); //here
+                        let y1 = ((GRID_HEIGHT - 1) as f32).min(y0 + 1.0);
                         let sx = 1.0 - tx;
                         let sy = 1.0 - ty;
                         let val = sx * sy * sf_f[(x0 * (GRID_HEIGHT as f32) + y0) as usize]
@@ -214,16 +218,20 @@ fn advect_vel(
                     }
                 }
             }
+            grid_u.grid_u_vec.clone_from(&grid_new_u.grid_newu_vec);
+            grid_v.grid_v_vec.clone_from(&grid_new_v.grid_newv_vec);
         }
     }
 }
 
 fn advect_smoke(
     scene_query: Query<&Scene, With<Grid>>,
-    mut grid_query: Query<(&mut GridnewM, &GridM, &GridS, &GridU, &GridV), With<Grid>>,
+    mut grid_query: Query<(&mut GridnewM, &mut GridM, &GridS, &GridU, &GridV), With<Grid>>,
 ) {
     if let Ok(scene) = scene_query.get_single() {
-        if let Ok((mut grid_new_m, grid_m, grid_s, grid_u, grid_v)) = grid_query.get_single_mut() {
+        if let Ok((mut grid_new_m, mut grid_m, grid_s, grid_u, grid_v)) =
+            grid_query.get_single_mut()
+        {
             grid_new_m.grid_newm_vec.clone_from(&grid_m.grid_m_vec);
 
             for x in 1..GRID_WIDTH - 1 {
@@ -239,9 +247,31 @@ fn advect_smoke(
                         let var_y = (y as f32 * scene.h) + (0.5 * scene.h) - (scene.dt * v);
 
                         //S_FIELD samplefield
+                        let sf_x = scene.h.max(var_x.min(GRID_WIDTH as f32 * scene.h));
+                        let sf_y = scene.h.max(var_y.min(GRID_HEIGHT as f32 * scene.h));
+                        let mut sf_f: Vec<f32> = Vec::new();
+                        sf_f.clone_from(&grid_m.grid_m_vec);
+                        let sf_dx = scene.h * 0.5;
+                        let sf_dy = scene.h * 0.5;
+                        let x0 = ((GRID_WIDTH - 1) as f32)
+                            .min(f32::floor((sf_x - sf_dx) * (1.0 / scene.h)));
+                        let tx = ((sf_x - sf_dx) - (x0 * scene.h)) * (1.0 / scene.h);
+                        let x1 = ((GRID_WIDTH - 1) as f32).min(x0 + 1.0);
+                        let y0 = ((GRID_HEIGHT - 1) as f32)
+                            .min(f32::floor((sf_y - sf_dy) * (1.0 / scene.h)));
+                        let ty = ((sf_y - sf_dy) - (y0 * scene.h)) * (1.0 / scene.h);
+                        let y1 = ((GRID_HEIGHT - 1) as f32).min(y0 + 1.0);
+                        let sx = 1.0 - tx;
+                        let sy = 1.0 - ty;
+                        let val = sx * sy * sf_f[(x0 * (GRID_HEIGHT as f32) + y0) as usize]
+                            + tx * sy * sf_f[(x1 * (GRID_HEIGHT as f32) + y0) as usize]
+                            + tx * ty * sf_f[(x1 * (GRID_HEIGHT as f32) + y1) as usize]
+                            + sx * ty * sf_f[(x0 * (GRID_HEIGHT as f32) + y1) as usize];
+                        grid_m.grid_m_vec[((x * GRID_HEIGHT) + y) as usize] = val;
                     }
                 }
             }
+            grid_m.grid_m_vec.clone_from(&grid_new_m.grid_newm_vec);
         }
     }
 }
