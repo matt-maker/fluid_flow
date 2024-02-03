@@ -24,14 +24,26 @@ impl Plugin for SimulatePlugin {
     }
 }
 
-fn update_simulation_vector_values(mut query: Query<&mut GridValues, With<Grid>>) {
-    if let Ok(mut grid_vec) = query.get_single_mut() {
+fn update_simulation_vector_values(mut query: Query<(&mut GridValues, &GridM), With<Grid>>) {
+    if let Ok((mut grid_vec, grid_m)) = query.get_single_mut() {
         for x in 0..GRID_WIDTH {
             for y in 0..GRID_HEIGHT {
-                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4)) as usize] = 255.0;
+                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4)) as usize] =
+                    255.0 * grid_m.grid_m_vec[((x * GRID_HEIGHT) + y) as usize];
+
+                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4) + 1) as usize] =
+                    255.0 * grid_m.grid_m_vec[((x * GRID_HEIGHT) + y) as usize];
+
+                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4) + 2) as usize] =
+                    255.0 * grid_m.grid_m_vec[((x * GRID_HEIGHT) + y) as usize];
+
+                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4) + 3) as usize] = 1.0;
+
+                /* Issue is in the indexs above!!!
+                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4)) as usize] = 100.0;
                 grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4) + 1) as usize] = 0.0;
                 grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4) + 2) as usize] = 0.0;
-                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4) + 3) as usize] = 0.5;
+                grid_vec.grid_values_vec[((x * 4 * GRID_HEIGHT) + (y * 4) + 3) as usize] = 1.0;*/
             }
         }
     }
@@ -267,7 +279,7 @@ fn advect_smoke(
                             + tx * sy * sf_f[(x1 * (GRID_HEIGHT as f32) + y0) as usize]
                             + tx * ty * sf_f[(x1 * (GRID_HEIGHT as f32) + y1) as usize]
                             + sx * ty * sf_f[(x0 * (GRID_HEIGHT as f32) + y1) as usize];
-                        grid_m.grid_m_vec[((x * GRID_HEIGHT) + y) as usize] = val;
+                        grid_new_m.grid_newm_vec[((x * GRID_HEIGHT) + y) as usize] = val;
                     }
                 }
             }

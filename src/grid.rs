@@ -192,12 +192,8 @@ fn spawn_cells(
                         (y - GRID_HEIGHT / 2) as f32 * GRID_CELL_SIZE[1],
                         0.0,
                     ),
-                    material: materials.add(ColorMaterial::from(Color::rgba(
-                        255.0,
-                        255.0,
-                        255.0,
-                        (x + y) as f32 / 250.0,
-                    ))),
+                    material: materials
+                        .add(ColorMaterial::from(Color::rgba(255.0, 255.0, 255.0, 1.0))),
                     ..default()
                 },
                 SimCell,
