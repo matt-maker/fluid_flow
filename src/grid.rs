@@ -219,6 +219,7 @@ fn update_cells(
                     grid_vec.grid_values_vec[counter + 3],
                 );
                 counter += 4;
+                //println!("Grid {:?}", grid_vec.grid_values_vec);
             }
         }
     }
@@ -283,7 +284,7 @@ fn pop_grid_values(mut query: Query<&mut GridValues, With<Grid>>) {
         for _ in 0..GRID_WIDTH {
             for _ in 0..GRID_HEIGHT {
                 for _ in 0..4 {
-                    grid_v.grid_values_vec.push(100.0);
+                    grid_v.grid_values_vec.push(0.0);
                 }
             }
         }
